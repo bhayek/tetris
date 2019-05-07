@@ -108,6 +108,10 @@ let lastMoveY = 0
 let canvasWidth = 200
 let canvasHeight = 460
 let playedCoordinates = []
+let gameInterval = 400 // ms before refresh
+let defaultGameInterval = gameInterval
+let pieceTouch = false
+let keyPressed = 0
 
 let pieceMaxMin = () => {
 	// currentPiece.xmin, currentPiece.xmax, 
@@ -251,37 +255,49 @@ let movePiece = (direction) => {
 
 
 window.addEventListener('keydown', event => {
-		renderGameCanvas()
 	let arrow = event.keyCode;
 	switch(arrow) {
 		case 38: // up arrow
+			renderGameCanvas()
 			rotatePiece("left");
 			renderPiece(gameCtx, currentPiece, currentPiece.position)
 			break;
 		case 40: // down arrow
+			renderGameCanvas()
 			rotatePiece("right");
 			renderPiece(gameCtx, currentPiece, currentPiece.position)
 			break;
 		case 37: // left
+			renderGameCanvas()
 			movePiece("left");
 			renderPiece(gameCtx, currentPiece, currentPiece.position)
 			break;
 		case 39: // right
+			renderGameCanvas()
 			movePiece("right")
 			renderPiece(gameCtx, currentPiece, currentPiece.position)
 			break;
-		case 32:
+		case 78:
+			renderGameCanvas()
 			newPiece()
 			renderPreviewCanvas()
 			renderPiece(previewCtx, currentPiece)
 			renderPiece(gameCtx, currentPiece)
 			break;
-
+		case 32:
+			spaceBarDown()
 	}
+})
 
+let spaceBarDown = () => {
+	gameInterval = 50
+	keyPressed = 1
+}
 
-	
-	
+window.addEventListener('keyup', event => {
+	if(event.keyCode === 32) {
+		 gameInterval = defaultGameInterval //
+	}
 })
 renderGameCanvas()
 renderPiece(gameCtx, currentPiece)
@@ -291,28 +307,37 @@ let incrimentPieceMovement = () => {
 	if (currentPiece.ymax >= 440) {
 		endTurn()
 		newPiece()
-	// } else if (avoidanceCheck()) {
-	// 	endTurn()
-	// 	newPiece()	
+	} else if (avoidanceCheck()) {
+		console.log("avoidanceCheck")
+		endTurn()
+		newPiece()	
 	} else {
 		currentPiece.position[1] += 1;
 	}
 	renderPiece(gameCtx, currentPiece, currentPiece.position)
 }
 
-// let avoidanceCheck = () => {
-// 	currentPiece.actCords.forEach(currentCord => {
-// 		playedCoordinates.forEach(playedCord => {
-// 			let cord1 = currentCord.toString()
-// 			let cord2 = [playedCord[0],playedCord[1].toString()]
-// 			console.log("cord1: " + cord1 + "cord2: " + cord2)
-// 			if(currentCord[0] === playedCord[0] && currentCord[1]+20 === playedCord[1]) {
-// 				return true;
-// 				console.log("true")
-// 			}
-// 		})
-// 	})
-// }
+let BreakException = {};
+
+let avoidanceCheck = () => {
+	try {
+		currentPiece.actCords.forEach(currentCord => {
+			playedCoordinates.forEach(playedCord => {
+				let cord1 = currentCord.toString()
+				let cord2 = [playedCord[0],playedCord[1].toString()]
+				//console.log("cord1: " + cord1 + " cord2: " + cord2)
+				if(currentCord[0] === playedCord[0] && currentCord[1]+20 === playedCord[1]) {
+					console.log("true")
+					endTurn()
+					newPiece()
+					throw BreakException;
+				}
+			})
+		})
+	} catch (e) {
+		if (e !== BreakException) throw e;
+	}
+}
 
 let endTurn = () => {
 	let playedCord = []
@@ -320,8 +345,7 @@ let endTurn = () => {
 		playedCord = [currentPiece["actCords"][index][0],currentPiece["actCords"][index][1],currentPiece.color]
 		playedCoordinates.push(playedCord)
 
-	})
-	
+	})	
 }
 
 function gameSpeed(){setTimeout(function(){
@@ -331,8 +355,10 @@ function gameSpeed(){setTimeout(function(){
 	renderGameCanvas()
 	renderPiece(gameCtx, currentPiece, currentPiece.position)
 	renderPiece(gameCtx, playedCoordinates, currentPiece.position)
-	gameSpeed()
-	},1000)}
+	//if(!keyPressed) {
+		gameSpeed()	
+	//}
+	},gameInterval)}
 
 gameSpeed()
 
